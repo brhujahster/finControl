@@ -1,0 +1,46 @@
+{{define "content"}}
+
+<div class="mb-6">
+    <a href="/cartoes" class="text-sm text-indigo-600 hover:underline">← Voltar para Cartões</a>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">{{.Titulo}}</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-xl">
+    <form method="post" action="{{.Action}}" class="space-y-5">
+
+        <div>
+            <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cartão <span class="text-red-500">*</span></label>
+            <input type="text" id="nome" name="nome" required
+                   placeholder="Ex: Nubank, Itaú Visa..."
+                   value="{{if .Cartao}}{{.Cartao.Nome}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="limite" class="block text-sm font-medium text-gray-700 mb-1">Limite (R$) <span class="text-red-500">*</span></label>
+            <input type="number" id="limite" name="limite" step="0.01" min="0" required
+                   placeholder="0.00"
+                   value="{{if .Cartao}}{{printf "%.2f" .Cartao.Limite}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="dia_vencimento" class="block text-sm font-medium text-gray-700 mb-1">Dia de Vencimento <span class="text-red-500">*</span></label>
+            <input type="number" id="dia_vencimento" name="dia_vencimento" min="1" max="31" required
+                   placeholder="Ex: 10"
+                   value="{{if .Cartao}}{{.Cartao.DiaVencimento}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition shadow-sm">
+                Salvar
+            </button>
+            <a href="/cartoes" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Cancelar</a>
+        </div>
+
+    </form>
+</div>
+
+{{end}}
