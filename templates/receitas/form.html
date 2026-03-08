@@ -1,0 +1,80 @@
+{{define "content"}}
+
+<div class="mb-6">
+    <a href="/receitas" class="text-sm text-indigo-600 hover:underline">← Voltar para Receitas</a>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">{{.Titulo}}</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-xl">
+    <form method="post" action="{{.Action}}" class="space-y-5">
+
+        <div>
+            <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+            <input type="text" id="descricao" name="descricao" required
+                   placeholder="Ex: Salário, Freelance..."
+                   value="{{if .Receita}}{{.Receita.Descricao}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="valor" class="block text-sm font-medium text-gray-700 mb-1">Valor (R$) <span class="text-red-500">*</span></label>
+            <input type="number" id="valor" name="valor" step="0.01" min="0" required
+                   placeholder="0.00"
+                   value="{{if .Receita}}{{printf "%.2f" .Receita.Valor}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="tipo" class="block text-sm font-medium text-gray-700 mb-1">Tipo <span class="text-red-500">*</span></label>
+            <select id="tipo" name="tipo" required onchange="toggleCampos(this.value)"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="pontual" {{if .Receita}}{{if eq .Receita.Tipo "pontual"}}selected{{end}}{{end}}>Pontual</option>
+                <option value="recorrente" {{if .Receita}}{{if eq .Receita.Tipo "recorrente"}}selected{{end}}{{end}}>Recorrente</option>
+            </select>
+        </div>
+
+        <div id="campos-pontual">
+            <label for="mes_referencia" class="block text-sm font-medium text-gray-700 mb-1">Mês de Referência</label>
+            <input type="date" id="mes_referencia" name="mes_referencia"
+                   value="{{if .Receita}}{{if .Receita.MesReferencia}}{{.Receita.MesReferencia.Format "2006-01-02"}}{{end}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div id="campos-recorrente" class="space-y-5">
+            <div>
+                <label for="data_inicio" class="block text-sm font-medium text-gray-700 mb-1">Data de Início</label>
+                <input type="date" id="data_inicio" name="data_inicio"
+                       value="{{if .Receita}}{{if .Receita.DataInicio}}{{.Receita.DataInicio.Format "2006-01-02"}}{{end}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="data_fim" class="block text-sm font-medium text-gray-700 mb-1">Data de Encerramento <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <input type="date" id="data_fim" name="data_fim"
+                       value="{{if .Receita}}{{if .Receita.DataFim}}{{.Receita.DataFim.Format "2006-01-02"}}{{end}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition shadow-sm">
+                Salvar
+            </button>
+            <a href="/receitas"
+               class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">
+                Cancelar
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+function toggleCampos(tipo) {
+    document.getElementById('campos-pontual').style.display = tipo === 'pontual' ? 'block' : 'none';
+    document.getElementById('campos-recorrente').style.display = tipo === 'recorrente' ? 'block' : 'none';
+}
+toggleCampos(document.getElementById('tipo').value);
+</script>
+
+{{end}}
