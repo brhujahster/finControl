@@ -1,0 +1,45 @@
+{{define "content"}}
+
+<div class="mb-6">
+    <a href="/terceiros" class="text-sm text-indigo-600 hover:underline">← Voltar para Terceiros</a>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">{{.Titulo}}</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-xl">
+    <form method="post" action="{{.Action}}" class="space-y-5">
+
+        <div>
+            <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+            <input type="text" id="nome" name="nome" required
+                   placeholder="Ex: João Silva"
+                   value="{{if .Terceiro}}{{.Terceiro.Nome}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="limite_liberado" class="block text-sm font-medium text-gray-700 mb-1">Limite Liberado (R$) <span class="text-red-500">*</span></label>
+            <input type="number" id="limite_liberado" name="limite_liberado" step="0.01" min="0" required
+                   placeholder="0.00"
+                   value="{{if .Terceiro}}{{printf "%.2f" .Terceiro.LimiteLiberado}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div>
+            <label for="observacao" class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-gray-400 font-normal">(opcional)</span></label>
+            <textarea id="observacao" name="observacao" rows="3"
+                      placeholder="Informações adicionais..."
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none">{{if .Terceiro}}{{if .Terceiro.Observacao}}{{.Terceiro.Observacao}}{{end}}{{end}}</textarea>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition shadow-sm">
+                Salvar
+            </button>
+            <a href="/terceiros" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Cancelar</a>
+        </div>
+
+    </form>
+</div>
+
+{{end}}
