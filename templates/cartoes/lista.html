@@ -1,0 +1,55 @@
+{{define "content"}}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Cartões de Crédito</h1>
+        <p class="text-sm text-gray-500 mt-1">Gerencie seus cartões e limites</p>
+    </div>
+    <a href="/cartoes/novo"
+       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+        + Novo Cartão
+    </a>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {{range .Cartoes}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-100 text-indigo-600 rounded-lg p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <span class="font-semibold text-gray-800">{{.Nome}}</span>
+            </div>
+        </div>
+
+        <div class="space-y-1 text-sm text-gray-600">
+            <div class="flex justify-between">
+                <span>Limite</span>
+                <span class="font-medium text-gray-800">R$ {{printf "%.2f" .Limite}}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Vencimento</span>
+                <span class="font-medium text-gray-800">Dia {{.DiaVencimento}}</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2 border-t border-gray-100">
+            <a href="/cartoes/{{.ID}}/editar"
+               class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition">Editar</a>
+            <form method="post" action="/cartoes/{{.ID}}/deletar">
+                <button type="submit" onclick="return confirm('Confirmar exclusão?')"
+                        class="text-red-500 hover:text-red-700 text-sm font-medium transition">Excluir</button>
+            </form>
+        </div>
+    </div>
+    {{else}}
+    <div class="col-span-3 bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400">
+        Nenhum cartão cadastrado.
+    </div>
+    {{end}}
+</div>
+
+{{end}}
