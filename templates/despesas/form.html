@@ -1,0 +1,136 @@
+{{define "content"}}
+
+<div class="mb-6">
+    <a href="/despesas" class="text-sm text-indigo-600 hover:underline">← Voltar para Despesas</a>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">{{.Titulo}}</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-2xl">
+    <form method="post" action="{{.Action}}" class="space-y-5">
+
+        <div>
+            <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+            <input type="text" id="descricao" name="descricao" required
+                   placeholder="Ex: Supermercado, Netflix..."
+                   value="{{if .Despesa}}{{.Despesa.Descricao}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="valor_total" class="block text-sm font-medium text-gray-700 mb-1">Valor Total (R$) <span class="text-red-500">*</span></label>
+                <input type="number" id="valor_total" name="valor_total" step="0.01" min="0" required
+                       placeholder="0.00"
+                       value="{{if .Despesa}}{{printf "%.2f" .Despesa.ValorTotal}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="data_compra" class="block text-sm font-medium text-gray-700 mb-1">Data da Compra <span class="text-red-500">*</span></label>
+                <input type="date" id="data_compra" name="data_compra" required
+                       value="{{if .Despesa}}{{.Despesa.DataCompra.Format "2006-01-02"}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+        </div>
+
+        <div>
+            <label for="forma_pagamento" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento <span class="text-red-500">*</span></label>
+            <select id="forma_pagamento" name="forma_pagamento" required onchange="togglePagamento(this.value)"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="dinheiro" {{if .Despesa}}{{if eq .Despesa.FormaPagamento "dinheiro"}}selected{{end}}{{end}}>💵 Dinheiro / Débito</option>
+                <option value="cartao" {{if .Despesa}}{{if eq .Despesa.FormaPagamento "cartao"}}selected{{end}}{{end}}>💳 Cartão de Crédito</option>
+            </select>
+        </div>
+
+        <div id="campo-cartao">
+            <label for="cartao_id" class="block text-sm font-medium text-gray-700 mb-1">Cartão</label>
+            <select id="cartao_id" name="cartao_id"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="">Selecione...</option>
+                {{range .Cartoes}}
+                <option value="{{.ID}}" {{if $.Despesa}}{{if $.Despesa.CartaoID}}{{if eq .ID (deref $.Despesa.CartaoID)}}selected{{end}}{{end}}{{end}}>
+                    {{.Nome}} (venc. dia {{.DiaVencimento}})
+                </option>
+                {{end}}
+            </select>
+
+            <div class="mt-4 flex items-center gap-3">
+                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                    <input type="checkbox" id="parcelado" name="parcelado" value="1"
+                           {{if .Despesa}}{{if .Despesa.Parcelado}}checked{{end}}{{end}}
+                           onchange="toggleParcelas(this.checked)"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-400">
+                    Parcelado
+                </label>
+            </div>
+
+            <div id="campo-parcelas" class="mt-4" style="display:none">
+                <label for="total_parcelas" class="block text-sm font-medium text-gray-700 mb-1">Número de Parcelas</label>
+                <input type="number" id="total_parcelas" name="total_parcelas" min="2"
+                       value="{{if .Despesa}}{{if .Despesa.TotalParcelas}}{{.Despesa.TotalParcelas}}{{end}}{{end}}"
+                       class="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+        </div>
+
+        <div id="campo-fixa">
+            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" name="fixa" value="1"
+                       {{if .Despesa}}{{if .Despesa.Fixa}}checked{{end}}{{end}}
+                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-400">
+                Despesa fixa (repete todo mês)
+            </label>
+        </div>
+
+        <div>
+            <label for="terceiro_id" class="block text-sm font-medium text-gray-700 mb-1">Terceiro <span class="text-gray-400 font-normal">(opcional)</span></label>
+            <select id="terceiro_id" name="terceiro_id"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="">Nenhum</option>
+                {{range .Terceiros}}
+                <option value="{{.ID}}" {{if $.Despesa}}{{if $.Despesa.TerceiroID}}{{if eq .ID (deref $.Despesa.TerceiroID)}}selected{{end}}{{end}}{{end}}>
+                    {{.Nome}}
+                </option>
+                {{end}}
+            </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="categoria" class="block text-sm font-medium text-gray-700 mb-1">Categoria <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <input type="text" id="categoria" name="categoria"
+                       placeholder="Ex: Alimentação, Lazer..."
+                       value="{{if .Despesa}}{{if .Despesa.Categoria}}{{.Despesa.Categoria}}{{end}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="observacao" class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <input type="text" id="observacao" name="observacao"
+                       value="{{if .Despesa}}{{if .Despesa.Observacao}}{{.Despesa.Observacao}}{{end}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition shadow-sm">
+                Salvar
+            </button>
+            <a href="/despesas" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Cancelar</a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+function togglePagamento(val) {
+    document.getElementById('campo-cartao').style.display = val === 'cartao' ? 'block' : 'none';
+    document.getElementById('campo-fixa').style.display = val === 'dinheiro' ? 'block' : 'none';
+}
+function toggleParcelas(checked) {
+    document.getElementById('campo-parcelas').style.display = checked ? 'block' : 'none';
+}
+togglePagamento(document.getElementById('forma_pagamento').value);
+const parceladoEl = document.getElementById('parcelado');
+if (parceladoEl) toggleParcelas(parceladoEl.checked);
+</script>
+
+{{end}}

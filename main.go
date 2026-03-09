@@ -90,6 +90,28 @@ func main() {
         }
     })
 
+    // Despesas
+    mux.HandleFunc("/despesas", func(w http.ResponseWriter, r *http.Request) {
+        if r.Method == http.MethodPost {
+            handlers.DespesasSalvar(w, r)
+        } else {
+            handlers.DespesasIndex(w, r)
+        }
+    })
+    mux.HandleFunc("/despesas/nova", handlers.DespesasNova)
+    mux.HandleFunc("/despesas/", func(w http.ResponseWriter, r *http.Request) {
+        switch {
+        case strings.HasSuffix(r.URL.Path, "/editar"):
+            handlers.DespesasEditar(w, r)
+        case strings.HasSuffix(r.URL.Path, "/deletar") && r.Method == http.MethodPost:
+            handlers.DespesasDeletar(w, r)
+        case r.Method == http.MethodPost:
+            handlers.DespesasAtualizar(w, r)
+        default:
+            http.NotFound(w, r)
+        }
+    })
+
     addr := "localhost:8080"
     log.Printf("Servidor iniciado em http://%s\n", addr)
     log.Fatal(http.ListenAndServe(addr, mux))
