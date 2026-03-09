@@ -16,6 +16,12 @@ var funcMap = template.FuncMap{
         }
         return *p
     },
+    "derefStr": func(p *string) string {
+        if p == nil {
+            return ""
+        }
+        return *p
+    },
 }
 
 var despesasTmpl = template.Must(template.New("base.html").Funcs(funcMap).ParseFiles(

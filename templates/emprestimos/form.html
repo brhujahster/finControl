@@ -1,0 +1,121 @@
+{{define "content"}}
+
+<div class="mb-6">
+    <a href="/emprestimos" class="text-sm text-indigo-600 hover:underline">← Voltar para Empréstimos</a>
+    <h1 class="text-2xl font-bold text-gray-800 mt-2">{{.Titulo}}</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-2xl">
+    <form method="post" action="{{.Action}}" class="space-y-5">
+
+        <div>
+            <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+            <input type="text" id="descricao" name="descricao" required
+                   placeholder="Ex: Financiamento carro, Empréstimo pessoal..."
+                   value="{{if .Emprestimo}}{{.Emprestimo.Descricao}}{{end}}"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="valor_total" class="block text-sm font-medium text-gray-700 mb-1">Valor Total (R$) <span class="text-red-500">*</span></label>
+                <input type="number" id="valor_total" name="valor_total" step="0.01" min="0" required
+                       placeholder="0.00"
+                       value="{{if .Emprestimo}}{{printf "%.2f" .Emprestimo.ValorTotal}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="total_parcelas" class="block text-sm font-medium text-gray-700 mb-1">Nº de Parcelas <span class="text-red-500">*</span></label>
+                <input type="number" id="total_parcelas" name="total_parcelas" min="1" required
+                       placeholder="Ex: 12"
+                       value="{{if .Emprestimo}}{{.Emprestimo.TotalParcelas}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="taxa_juros" class="block text-sm font-medium text-gray-700 mb-1">Taxa de Juros (% a.m.) <span class="text-gray-400 font-normal">(opcional)</span></label>
+                <input type="number" id="taxa_juros" name="taxa_juros" step="0.01" min="0"
+                       placeholder="Ex: 1.99"
+                       value="{{if .Emprestimo}}{{if .Emprestimo.TaxaJuros}}{{printf "%.2f" (deref .Emprestimo.TaxaJuros)}}{{end}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="tipo_juros" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Juros</label>
+                <select id="tipo_juros" name="tipo_juros"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                    <option value="simples" {{if .Emprestimo}}{{if .Emprestimo.TipoJuros}}{{if eq (derefStr .Emprestimo.TipoJuros) "simples"}}selected{{end}}{{end}}{{end}}>Simples</option>
+                    <option value="composto" {{if .Emprestimo}}{{if .Emprestimo.TipoJuros}}{{if eq (derefStr .Emprestimo.TipoJuros) "composto"}}selected{{end}}{{end}}{{end}}>Composto (Price)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="data_inicio" class="block text-sm font-medium text-gray-700 mb-1">Data de Início <span class="text-red-500">*</span></label>
+                <input type="date" id="data_inicio" name="data_inicio" required
+                       value="{{if .Emprestimo}}{{.Emprestimo.DataInicio.Format "2006-01-02"}}{{end}}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label for="forma_pagamento" class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento <span class="text-red-500">*</span></label>
+                <select id="forma_pagamento" name="forma_pagamento" required onchange="toggleCartao(this.value)"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                    <option value="dinheiro" {{if .Emprestimo}}{{if eq .Emprestimo.FormaPagamento "dinheiro"}}selected{{end}}{{end}}>💵 Dinheiro</option>
+                    <option value="cartao" {{if .Emprestimo}}{{if eq .Emprestimo.FormaPagamento "cartao"}}selected{{end}}{{end}}>💳 Cartão de Crédito</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="campo-cartao-emp">
+            <label for="cartao_id" class="block text-sm font-medium text-gray-700 mb-1">Cartão</label>
+            <select id="cartao_id" name="cartao_id"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="">Selecione...</option>
+                {{range .Cartoes}}
+                <option value="{{.ID}}" {{if $.Emprestimo}}{{if $.Emprestimo.CartaoID}}{{if eq .ID (deref $.Emprestimo.CartaoID)}}selected{{end}}{{end}}{{end}}>
+                    {{.Nome}} (venc. dia {{.DiaVencimento}})
+                </option>
+                {{end}}
+            </select>
+        </div>
+
+        <div>
+            <label for="terceiro_id" class="block text-sm font-medium text-gray-700 mb-1">Responsável pelo Pagamento <span class="text-gray-400 font-normal">(opcional)</span></label>
+            <select id="terceiro_id" name="terceiro_id"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <option value="">Nenhum</option>
+                {{range .Terceiros}}
+                <option value="{{.ID}}" {{if $.Emprestimo}}{{if $.Emprestimo.TerceiroID}}{{if eq .ID (deref $.Emprestimo.TerceiroID)}}selected{{end}}{{end}}{{end}}>
+                    {{.Nome}}
+                </option>
+                {{end}}
+            </select>
+        </div>
+
+        <div>
+            <label for="observacao" class="block text-sm font-medium text-gray-700 mb-1">Observação <span class="text-gray-400 font-normal">(opcional)</span></label>
+            <textarea id="observacao" name="observacao" rows="2"
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none">{{if .Emprestimo}}{{if .Emprestimo.Observacao}}{{.Emprestimo.Observacao}}{{end}}{{end}}</textarea>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-lg transition shadow-sm">
+                Salvar
+            </button>
+            <a href="/emprestimos" class="text-sm font-medium text-gray-500 hover:text-gray-700 transition">Cancelar</a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+function toggleCartao(val) {
+    document.getElementById('campo-cartao-emp').style.display = val === 'cartao' ? 'block' : 'none';
+}
+toggleCartao(document.getElementById('forma_pagamento').value);
+</script>
+
+{{end}}
