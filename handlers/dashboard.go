@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fincontrol/models"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -12,6 +13,11 @@ var dashboardTmpl = template.Must(template.New("base.html").Funcs(funcMap).Parse
 	"templates/base.html",
 	"templates/dashboard.html",
 ))
+
+type Alerta struct {
+	Tipo      string
+	Mensagem  string
+}
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
 	agora := time.Now()
@@ -57,19 +63,30 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 		percentual = totalDespesas / receitaTotal * 100
 	}
 
-	cartaoExcedido := false
+	var alertas []Alerta
+
+	if saldo < 0 {
+		alertas = append(alertas, Alerta{
+			Tipo:     "danger",
+			Mensagem: fmt.Sprintf("Saldo negativo: suas despesas (R$ %.2f) superam as receitas (R$ %.2f) em R$ %.2f.", totalDespesas, receitaTotal, -saldo),
+		})
+	}
+
 	for _, c := range cartoesUso {
 		if c.Excedido {
-			cartaoExcedido = true
-			break
+			alertas = append(alertas, Alerta{
+				Tipo:     "warning",
+				Mensagem: fmt.Sprintf("Limite do cartão \"%s\" ultrapassado: utilizado R$ %.2f de R$ %.2f (%.0f%%).", c.Nome, c.Utilizado, c.Limite, c.Utilizado/c.Limite*100),
+			})
 		}
 	}
 
-	terceiroExcedido := false
 	for _, t := range terceiros {
 		if t.Total > t.LimiteLiberado {
-			terceiroExcedido = true
-			break
+			alertas = append(alertas, Alerta{
+				Tipo:     "caution",
+				Mensagem: fmt.Sprintf("Terceiro \"%s\" ultrapassou o limite liberado: gasto R$ %.2f de R$ %.2f.", t.Nome, t.Total, t.LimiteLiberado),
+			})
 		}
 	}
 
@@ -97,26 +114,25 @@ func Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dashboardTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
-		"Ano":              ano,
-		"Mes":              mes,
-		"MesNome":          mesesNomes[mes],
-		"ReceitaTotal":     receitaTotal,
-		"TotalDespesas":    totalDespesas,
-		"TotalCartao":      totalCartao,
-		"TotalDinheiro":    totalDinheiro,
-		"PctCartao":        pctCartao,
-		"PctDinheiro":      pctDinheiro,
-		"Saldo":            saldo,
-		"Percentual":       percentual,
-		"Terceiros":        terceiros,
-		"Emprestimos":      emprestimos,
-		"CartoesUso":       cartoesUso,
-		"SaldoNegativo":    saldo < 0,
-		"CartaoExcedido":   cartaoExcedido,
-		"TerceiroExcedido": terceiroExcedido,
-		"MesAnterior":      mesAnterior,
-		"AnoAnterior":      anoAnterior,
-		"MesProximo":       mesProximo,
-		"AnoProximo":       anoProximo,
+		"Ano":          ano,
+		"Mes":          mes,
+		"MesNome":      mesesNomes[mes],
+		"ReceitaTotal": receitaTotal,
+		"TotalDespesas": totalDespesas,
+		"TotalCartao":   totalCartao,
+		"TotalDinheiro": totalDinheiro,
+		"PctCartao":     pctCartao,
+		"PctDinheiro":   pctDinheiro,
+		"Saldo":         saldo,
+		"Percentual":    percentual,
+		"Terceiros":     terceiros,
+		"Emprestimos":   emprestimos,
+		"CartoesUso":    cartoesUso,
+		"SaldoNegativo": saldo < 0,
+		"Alertas":       alertas,
+		"MesAnterior":   mesAnterior,
+		"AnoAnterior":   anoAnterior,
+		"MesProximo":    mesProximo,
+		"AnoProximo":    anoProximo,
 	})
 }
