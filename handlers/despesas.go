@@ -52,7 +52,7 @@ func DespesasIndex(w http.ResponseWriter, r *http.Request) {
 
     despesas, err := models.ListarDespesasPorMes(ano, mes)
     if err != nil {
-        http.Error(w, "Erro ao listar despesas: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao listar despesas", err.Error(), "/", http.StatusInternalServerError)
         return
     }
 
@@ -90,13 +90,22 @@ func DespesasNova(w http.ResponseWriter, r *http.Request) {
 
 func DespesasSalvar(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/despesas", http.StatusBadRequest)
         return
     }
 
     despesa, cartaoID, err := despesaFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        cartoes, _ := models.ListarCartoes()
+        terceiros, _ := models.ListarTerceiros()
+        despesasFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Despesa":   nil,
+            "Titulo":    "Nova Despesa",
+            "Action":    "/despesas",
+            "Cartoes":   cartoes,
+            "Terceiros": terceiros,
+            "Erro":      "Dados inválidos: " + err.Error(),
+        })
         return
     }
 
@@ -109,7 +118,7 @@ func DespesasSalvar(w http.ResponseWriter, r *http.Request) {
     }
 
     if err := models.CriarDespesa(despesa, diaVencimento); err != nil {
-        http.Error(w, "Erro ao salvar despesa: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao salvar despesa", err.Error(), "/despesas", http.StatusInternalServerError)
         return
     }
 
@@ -119,13 +128,13 @@ func DespesasSalvar(w http.ResponseWriter, r *http.Request) {
 func DespesasEditar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/despesas/", "/editar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da despesa é inválido.", "/despesas", http.StatusBadRequest)
         return
     }
 
     despesa, err := models.BuscarDespesa(id)
     if err != nil {
-        http.Error(w, "Despesa não encontrada", http.StatusNotFound)
+        renderErro(w, "Despesa não encontrada", "A despesa solicitada não foi encontrada.", "/despesas", http.StatusNotFound)
         return
     }
 
@@ -143,24 +152,33 @@ func DespesasEditar(w http.ResponseWriter, r *http.Request) {
 func DespesasAtualizar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/despesas/", "")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da despesa é inválido.", "/despesas", http.StatusBadRequest)
         return
     }
 
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/despesas", http.StatusBadRequest)
         return
     }
 
     despesa, _, err := despesaFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        cartoes, _ := models.ListarCartoes()
+        terceiros, _ := models.ListarTerceiros()
+        despesasFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Despesa":   nil,
+            "Titulo":    "Editar Despesa",
+            "Action":    "/despesas/" + strconv.Itoa(id),
+            "Cartoes":   cartoes,
+            "Terceiros": terceiros,
+            "Erro":      "Dados inválidos: " + err.Error(),
+        })
         return
     }
     despesa.ID = id
 
     if err := models.AtualizarDespesa(despesa); err != nil {
-        http.Error(w, "Erro ao atualizar despesa: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao atualizar despesa", err.Error(), "/despesas", http.StatusInternalServerError)
         return
     }
 
@@ -170,12 +188,12 @@ func DespesasAtualizar(w http.ResponseWriter, r *http.Request) {
 func DespesasDeletar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/despesas/", "/deletar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da despesa é inválido.", "/despesas", http.StatusBadRequest)
         return
     }
 
     if err := models.DeletarDespesa(id); err != nil {
-        http.Error(w, "Erro ao deletar despesa: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao deletar despesa", err.Error(), "/despesas", http.StatusInternalServerError)
         return
     }
 

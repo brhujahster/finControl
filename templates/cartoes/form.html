@@ -6,6 +6,9 @@
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-xl">
+    {{if .Erro}}
+    <div class="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{.Erro}}</div>
+    {{end}}
     <form method="post" action="{{.Action}}" class="space-y-5">
 
         <div>
