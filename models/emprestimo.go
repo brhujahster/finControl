@@ -99,13 +99,7 @@ func gerarDespesasEmprestimo(e Emprestimo, emprestimoID, diaVencimento int) erro
     total := e.TotalParcelas
 
     for i, valorParcela := range parcelas {
-        var dataComp time.Time
-        if e.FormaPagamento == "cartao" {
-            dataComp = competenciaBase.AddDate(0, i, 0)
-        } else {
-            dataComp = competenciaBase.AddDate(0, i, 0)
-        }
-
+        dataComp := competenciaBase.AddDate(0, i, 0)
         parcela := i + 1
         _, err := db.DB.Exec(`
             INSERT INTO despesas (descricao, valor_total, data_compra, forma_pagamento, cartao_id,
@@ -138,14 +132,12 @@ func calcularParcelas(e Emprestimo) []float64 {
     taxa := *e.TaxaJuros / 100.0
 
     if e.TipoJuros != nil && *e.TipoJuros == "composto" {
-        // PMT = PV * i / (1 - (1+i)^-n)
         pmt := e.ValorTotal * taxa / (1 - math.Pow(1+taxa, -float64(n)))
         pmt = math.Round(pmt*100) / 100
         for i := range parcelas {
             parcelas[i] = pmt
         }
     } else {
-        // Juros simples: total = principal * (1 + taxa * n)
         totalComJuros := e.ValorTotal * (1 + taxa*float64(n))
         vp := math.Round(totalComJuros/float64(n)*100) / 100
         for i := range parcelas {
@@ -167,6 +159,9 @@ func AtualizarEmprestimo(e Emprestimo) error {
 }
 
 func DeletarEmprestimo(id int) error {
+    if _, err := db.DB.Exec(`DELETE FROM despesas WHERE categoria = 'Empréstimo' AND CAST(observacao AS INTEGER) = ?`, id); err != nil {
+        return err
+    }
     _, err := db.DB.Exec(`DELETE FROM emprestimos WHERE id = ?`, id)
     return err
 }
