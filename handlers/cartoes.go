@@ -21,7 +21,7 @@ var cartoesFormTmpl = template.Must(template.ParseFiles(
 func CartoesIndex(w http.ResponseWriter, r *http.Request) {
     cartoes, err := models.ListarCartoes()
     if err != nil {
-        http.Error(w, "Erro ao listar cartões: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao listar cartões", err.Error(), "/", http.StatusInternalServerError)
         return
     }
     cartoesTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
@@ -39,18 +39,23 @@ func CartoesNovo(w http.ResponseWriter, r *http.Request) {
 
 func CartoesSalvar(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/cartoes", http.StatusBadRequest)
         return
     }
 
     cartao, err := cartaoFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        cartoesFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Cartao": nil,
+            "Titulo": "Novo Cartão",
+            "Action": "/cartoes",
+            "Erro":   "Dados inválidos: " + err.Error(),
+        })
         return
     }
 
     if err := models.CriarCartao(cartao); err != nil {
-        http.Error(w, "Erro ao salvar cartão: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao salvar cartão", err.Error(), "/cartoes", http.StatusInternalServerError)
         return
     }
 
@@ -60,13 +65,13 @@ func CartoesSalvar(w http.ResponseWriter, r *http.Request) {
 func CartoesEditar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/cartoes/", "/editar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador do cartão é inválido.", "/cartoes", http.StatusBadRequest)
         return
     }
 
     cartao, err := models.BuscarCartao(id)
     if err != nil {
-        http.Error(w, "Cartão não encontrado", http.StatusNotFound)
+        renderErro(w, "Cartão não encontrado", "O cartão solicitado não foi encontrado.", "/cartoes", http.StatusNotFound)
         return
     }
 
@@ -80,24 +85,29 @@ func CartoesEditar(w http.ResponseWriter, r *http.Request) {
 func CartoesAtualizar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/cartoes/", "")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador do cartão é inválido.", "/cartoes", http.StatusBadRequest)
         return
     }
 
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/cartoes", http.StatusBadRequest)
         return
     }
 
     cartao, err := cartaoFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        cartoesFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Cartao": nil,
+            "Titulo": "Editar Cartão",
+            "Action": "/cartoes/" + strconv.Itoa(id),
+            "Erro":   "Dados inválidos: " + err.Error(),
+        })
         return
     }
     cartao.ID = id
 
     if err := models.AtualizarCartao(cartao); err != nil {
-        http.Error(w, "Erro ao atualizar cartão: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao atualizar cartão", err.Error(), "/cartoes", http.StatusInternalServerError)
         return
     }
 
@@ -107,12 +117,22 @@ func CartoesAtualizar(w http.ResponseWriter, r *http.Request) {
 func CartoesDeletar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/cartoes/", "/deletar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador do cartão é inválido.", "/cartoes", http.StatusBadRequest)
+        return
+    }
+
+    temDespesas, err := models.CartaoTemDespesas(id)
+    if err != nil {
+        renderErro(w, "Erro ao verificar dependências", err.Error(), "/cartoes", http.StatusInternalServerError)
+        return
+    }
+    if temDespesas {
+        renderErro(w, "Cartão em uso", "Não é possível excluir este cartão pois existem despesas associadas a ele.", "/cartoes", http.StatusConflict)
         return
     }
 
     if err := models.DeletarCartao(id); err != nil {
-        http.Error(w, "Erro ao deletar cartão: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao deletar cartão", err.Error(), "/cartoes", http.StatusInternalServerError)
         return
     }
 

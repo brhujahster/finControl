@@ -37,7 +37,7 @@ func ReceitasIndex(w http.ResponseWriter, r *http.Request) {
 
     receitas, err := models.ListarReceitasPorMes(ano, mes)
     if err != nil {
-        http.Error(w, "Erro ao listar receitas: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao listar receitas", err.Error(), "/", http.StatusInternalServerError)
         return
     }
 
@@ -46,13 +46,12 @@ func ReceitasIndex(w http.ResponseWriter, r *http.Request) {
         total += rc.Valor
     }
 
-    data := map[string]interface{}{
+    receitasTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
         "Receitas": receitas,
         "Total":    total,
         "Ano":      ano,
         "Mes":      mes,
-    }
-    receitasTmpl.ExecuteTemplate(w, "base", data)
+    })
 }
 
 func ReceitasNova(w http.ResponseWriter, r *http.Request) {
@@ -65,18 +64,23 @@ func ReceitasNova(w http.ResponseWriter, r *http.Request) {
 
 func ReceitasSalvar(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/receitas", http.StatusBadRequest)
         return
     }
 
     receita, err := receitaFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        receitasFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Receita": nil,
+            "Titulo":  "Nova Receita",
+            "Action":  "/receitas",
+            "Erro":    "Dados inválidos: " + err.Error(),
+        })
         return
     }
 
     if err := models.CriarReceita(receita); err != nil {
-        http.Error(w, "Erro ao salvar receita: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao salvar receita", err.Error(), "/receitas", http.StatusInternalServerError)
         return
     }
 
@@ -86,13 +90,13 @@ func ReceitasSalvar(w http.ResponseWriter, r *http.Request) {
 func ReceitasEditar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/receitas/", "/editar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da receita é inválido.", "/receitas", http.StatusBadRequest)
         return
     }
 
     receita, err := models.BuscarReceita(id)
     if err != nil {
-        http.Error(w, "Receita não encontrada", http.StatusNotFound)
+        renderErro(w, "Receita não encontrada", "A receita solicitada não foi encontrada.", "/receitas", http.StatusNotFound)
         return
     }
 
@@ -106,24 +110,29 @@ func ReceitasEditar(w http.ResponseWriter, r *http.Request) {
 func ReceitasAtualizar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/receitas/", "")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da receita é inválido.", "/receitas", http.StatusBadRequest)
         return
     }
 
     if err := r.ParseForm(); err != nil {
-        http.Error(w, "Formulário inválido", http.StatusBadRequest)
+        renderErro(w, "Formulário inválido", err.Error(), "/receitas", http.StatusBadRequest)
         return
     }
 
     receita, err := receitaFromForm(r)
     if err != nil {
-        http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+        receitasFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+            "Receita": nil,
+            "Titulo":  "Editar Receita",
+            "Action":  "/receitas/" + strconv.Itoa(id),
+            "Erro":    "Dados inválidos: " + err.Error(),
+        })
         return
     }
     receita.ID = id
 
     if err := models.AtualizarReceita(receita); err != nil {
-        http.Error(w, "Erro ao atualizar receita: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao atualizar receita", err.Error(), "/receitas", http.StatusInternalServerError)
         return
     }
 
@@ -133,12 +142,12 @@ func ReceitasAtualizar(w http.ResponseWriter, r *http.Request) {
 func ReceitasDeletar(w http.ResponseWriter, r *http.Request) {
     id, err := extrairID(r.URL.Path, "/receitas/", "/deletar")
     if err != nil {
-        http.Error(w, "ID inválido", http.StatusBadRequest)
+        renderErro(w, "ID inválido", "O identificador da receita é inválido.", "/receitas", http.StatusBadRequest)
         return
     }
 
     if err := models.DeletarReceita(id); err != nil {
-        http.Error(w, "Erro ao deletar receita: "+err.Error(), http.StatusInternalServerError)
+        renderErro(w, "Erro ao deletar receita", err.Error(), "/receitas", http.StatusInternalServerError)
         return
     }
 

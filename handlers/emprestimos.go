@@ -22,7 +22,7 @@ var emprestimosFormTmpl = template.Must(template.New("base.html").Funcs(funcMap)
 func EmprestimosIndex(w http.ResponseWriter, r *http.Request) {
 	emprestimos, err := models.ListarEmprestimos()
 	if err != nil {
-		http.Error(w, "Erro ao listar empréstimos: "+err.Error(), http.StatusInternalServerError)
+		renderErro(w, "Erro ao listar empréstimos", err.Error(), "/", http.StatusInternalServerError)
 		return
 	}
 	emprestimosTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
@@ -44,13 +44,22 @@ func EmprestimosNovo(w http.ResponseWriter, r *http.Request) {
 
 func EmprestimosSalvar(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Formulário inválido", http.StatusBadRequest)
+		renderErro(w, "Formulário inválido", err.Error(), "/emprestimos", http.StatusBadRequest)
 		return
 	}
 
 	emprestimo, err := emprestimoFromForm(r)
 	if err != nil {
-		http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+		cartoes, _ := models.ListarCartoes()
+		terceiros, _ := models.ListarTerceiros()
+		emprestimosFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Emprestimo": nil,
+			"Titulo":     "Novo Empréstimo",
+			"Action":     "/emprestimos",
+			"Cartoes":    cartoes,
+			"Terceiros":  terceiros,
+			"Erro":       "Dados inválidos: " + err.Error(),
+		})
 		return
 	}
 
@@ -63,7 +72,7 @@ func EmprestimosSalvar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := models.CriarEmprestimo(emprestimo, diaVencimento); err != nil {
-		http.Error(w, "Erro ao salvar empréstimo: "+err.Error(), http.StatusInternalServerError)
+		renderErro(w, "Erro ao salvar empréstimo", err.Error(), "/emprestimos", http.StatusInternalServerError)
 		return
 	}
 
@@ -73,13 +82,13 @@ func EmprestimosSalvar(w http.ResponseWriter, r *http.Request) {
 func EmprestimosEditar(w http.ResponseWriter, r *http.Request) {
 	id, err := extrairID(r.URL.Path, "/emprestimos/", "/editar")
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		renderErro(w, "ID inválido", "O identificador do empréstimo é inválido.", "/emprestimos", http.StatusBadRequest)
 		return
 	}
 
 	emprestimo, err := models.BuscarEmprestimo(id)
 	if err != nil {
-		http.Error(w, "Empréstimo não encontrado", http.StatusNotFound)
+		renderErro(w, "Empréstimo não encontrado", "O empréstimo solicitado não foi encontrado.", "/emprestimos", http.StatusNotFound)
 		return
 	}
 
@@ -97,24 +106,33 @@ func EmprestimosEditar(w http.ResponseWriter, r *http.Request) {
 func EmprestimosAtualizar(w http.ResponseWriter, r *http.Request) {
 	id, err := extrairID(r.URL.Path, "/emprestimos/", "")
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		renderErro(w, "ID inválido", "O identificador do empréstimo é inválido.", "/emprestimos", http.StatusBadRequest)
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Formulário inválido", http.StatusBadRequest)
+		renderErro(w, "Formulário inválido", err.Error(), "/emprestimos", http.StatusBadRequest)
 		return
 	}
 
 	emprestimo, err := emprestimoFromForm(r)
 	if err != nil {
-		http.Error(w, "Dados inválidos: "+err.Error(), http.StatusBadRequest)
+		cartoes, _ := models.ListarCartoes()
+		terceiros, _ := models.ListarTerceiros()
+		emprestimosFormTmpl.ExecuteTemplate(w, "base", map[string]interface{}{
+			"Emprestimo": nil,
+			"Titulo":     "Editar Empréstimo",
+			"Action":     "/emprestimos/" + strconv.Itoa(id),
+			"Cartoes":    cartoes,
+			"Terceiros":  terceiros,
+			"Erro":       "Dados inválidos: " + err.Error(),
+		})
 		return
 	}
 	emprestimo.ID = id
 
 	if err := models.AtualizarEmprestimo(emprestimo); err != nil {
-		http.Error(w, "Erro ao atualizar empréstimo: "+err.Error(), http.StatusInternalServerError)
+		renderErro(w, "Erro ao atualizar empréstimo", err.Error(), "/emprestimos", http.StatusInternalServerError)
 		return
 	}
 
@@ -124,12 +142,12 @@ func EmprestimosAtualizar(w http.ResponseWriter, r *http.Request) {
 func EmprestimosDeletar(w http.ResponseWriter, r *http.Request) {
 	id, err := extrairID(r.URL.Path, "/emprestimos/", "/deletar")
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		renderErro(w, "ID inválido", "O identificador do empréstimo é inválido.", "/emprestimos", http.StatusBadRequest)
 		return
 	}
 
 	if err := models.DeletarEmprestimo(id); err != nil {
-		http.Error(w, "Erro ao deletar empréstimo: "+err.Error(), http.StatusInternalServerError)
+		renderErro(w, "Erro ao deletar empréstimo", err.Error(), "/emprestimos", http.StatusInternalServerError)
 		return
 	}
 
